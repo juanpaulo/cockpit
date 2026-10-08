@@ -1,0 +1,32 @@
+[
+  {
+    "entity_id": "sensor.rooftop_solar_power",
+    "state": "2430",
+    "last_changed": "now-5m",
+    "attributes": { "friendly_name": "Solar power", "unit_of_measurement": "W" }
+  },
+  {
+    "entity_id": "sensor.rooftop_solar_energy_today",
+    "state": "14.2",
+    "last_changed": "now-20m",
+    "attributes": { "friendly_name": "Solar energy today", "unit_of_measurement": "kWh" }
+  },
+  {
+    "entity_id": "lock.front_door",
+    "state": "unlocked",
+    "last_changed": "now-25m",
+    "attributes": { "friendly_name": "Front door" }
+  },
+  {
+    "entity_id": "climate.living_room",
+    "state": "cool",
+    "last_changed": "now-1h",
+    "attributes": { "friendly_name": "Living room", "current_temperature": 24.5 }
+  },
+  {
+    "entity_id": "cover.garage_door",
+    "state": "closed",
+    "last_changed": "now-6h",
+    "attributes": { "friendly_name": "Garage door" }
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "id": "kd_01",
+      "url": "https://www.notion.so/kd_01",
+      "properties": {
+        "Name": { "title": [{ "plain_text": "Toyota dividend ex-date" }] },
+        "Date": { "date": { "start": "today+6" } },
+        "Type": { "select": { "name": "dividend" } }
+      }
+    },
+    {
+      "id": "kd_02",
+      "url": "https://www.notion.so/kd_02",
+      "properties": {
+        "Name": { "title": [{ "plain_text": "Furusato nozei payment deadline" }] },
+        "Date": { "date": { "start": "today+18" } },
+        "Type": { "select": { "name": "furusato nozei" } }
+      }
+    },
+    {
+      "id": "kd_03",
+      "url": "https://www.notion.so/kd_03",
+      "properties": {
+        "Name": { "title": [{ "plain_text": "Q3 estimated tax" }] },
+        "Date": { "date": { "start": "today+40" } },
+        "Type": { "select": { "name": "tax" } }
+      }
+    }
+  ]
+}

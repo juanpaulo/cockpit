@@ -1,0 +1,19 @@
+segments:
+  - id: family
+    name: Family
+    parent: personal
+    gmail_labels: ["Cockpit/Family"]
+    calendars: ["Family"]
+    notion_values: ["Family"]
+  - id: investments
+    name: Investments
+    parent: personal
+    gmail_labels: ["Cockpit/Investments"]
+    notion_values: ["Investments"]
+  - id: home
+    name: Home Automation
+    parent: personal
+  - id: general
+    name: General
+    parent: personal
+    default: true

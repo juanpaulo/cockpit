@@ -1,0 +1,9 @@
+profiles:
+  - id: owner
+    name: Owner
+    emails: ["owner@example.com"]
+    segments: ["*"]
+  - id: family
+    name: Family member
+    emails: ["family@example.com"]
+    segments: ["family"]

@@ -1,0 +1,15 @@
+# Home Assistant entities grouped by card type.
+cards:
+  - type: solar
+    entities:
+      - sensor.example_solar_power
+      - sensor.example_solar_energy_today
+  - type: locks
+    entities:
+      - lock.example
+  - type: climate
+    entities:
+      - climate.example
+  - type: garage
+    entities:
+      - cover.example

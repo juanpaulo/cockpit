@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "id": "evt_d01",
+      "summary": "Dentist appointment",
+      "calendar": "Family",
+      "location": "Hoshino Dental Clinic",
+      "start": { "dateTime": "now+45m" },
+      "end": { "dateTime": "now+105m" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d01"
+    },
+    {
+      "id": "evt_d02",
+      "summary": "School pickup",
+      "calendar": "Family",
+      "start": { "dateTime": "now+5h" },
+      "end": { "dateTime": "now+5h+30m" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d02"
+    },
+    {
+      "id": "evt_d03",
+      "summary": "Team lunch",
+      "calendar": "Personal",
+      "location": "Kitchen Ao",
+      "start": { "dateTime": "today+1+4h" },
+      "end": { "dateTime": "today+1+5h" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d03"
+    },
+    {
+      "id": "evt_d04",
+      "summary": "Weekend trip to Nikko",
+      "calendar": "Family",
+      "start": { "dateTime": "today+3+2h" },
+      "end": { "dateTime": "today+4+10h" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d04"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "id": "hold_01",
+      "properties": {
+        "Ticker": { "title": [{ "plain_text": "7203" }] },
+        "Exchange": { "select": { "name": "TSE" } },
+        "Quantity": { "number": 100 },
+        "Currency": { "select": { "name": "JPY" } }
+      }
+    },
+    {
+      "id": "hold_02",
+      "properties": {
+        "Ticker": { "title": [{ "plain_text": "9984" }] },
+        "Exchange": { "select": { "name": "TSE" } },
+        "Quantity": { "number": 30 },
+        "Currency": { "select": { "name": "JPY" } }
+      }
+    },
+    {
+      "id": "hold_03",
+      "properties": {
+        "Ticker": { "title": [{ "plain_text": "AAPL" }] },
+        "Exchange": { "select": { "name": "NASDAQ" } },
+        "Quantity": { "number": 12 },
+        "Currency": { "select": { "name": "USD" } }
+      }
+    },
+    {
+      "id": "hold_04",
+      "properties": {
+        "Ticker": { "title": [{ "plain_text": "MSFT" }] },
+        "Exchange": { "select": { "name": "NYSE" } },
+        "Quantity": { "number": 5 },
+        "Currency": { "select": { "name": "USD" } }
+      }
+    }
+  ]
+}

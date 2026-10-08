@@ -1,0 +1,28 @@
+{
+  "threads": [
+    {
+      "id": "thr_0a1f2b",
+      "labels": ["INBOX", "UNREAD", "Cockpit/Family"],
+      "from": { "name": "Midori Aoki", "email": "midori.a@example.org" },
+      "subject": "Sunday lunch plans",
+      "snippet": "Can everyone make it around noon? I'll book the usual place.",
+      "internalDate": "now-3h"
+    },
+    {
+      "id": "thr_9c4d7e",
+      "labels": ["INBOX", "UNREAD", "Cockpit/Investments"],
+      "from": { "name": "Brokerage Notice", "email": "notice@example-broker.jp" },
+      "subject": "Dividend statement available",
+      "snippet": "Your June dividend statement is now available for download.",
+      "internalDate": "now-1d"
+    },
+    {
+      "id": "thr_55b8a0",
+      "labels": ["INBOX", "STARRED"],
+      "from": { "name": "Kenta Sora", "email": "k.sora@example.net" },
+      "subject": "Re: Weekend hiking route",
+      "snippet": "Trailhead parking fills up early — let's aim for 7am.",
+      "internalDate": "now-2d"
+    }
+  ]
+}
