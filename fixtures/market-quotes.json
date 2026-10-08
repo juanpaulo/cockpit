@@ -1,0 +1,28 @@
+{
+  "quotes": {
+    "7203.T": {
+      "regularMarketPrice": 3120.5,
+      "currency": "JPY",
+      "regularMarketChangePercent": 0.69
+    },
+    "9984.T": {
+      "regularMarketPrice": 9821.0,
+      "currency": "JPY",
+      "regularMarketChangePercent": -1.24
+    },
+    "AAPL": {
+      "regularMarketPrice": 252.14,
+      "currency": "USD",
+      "regularMarketChangePercent": -0.42
+    },
+    "MSFT": {
+      "regularMarketPrice": 511.86,
+      "currency": "USD",
+      "regularMarketChangePercent": 1.08
+    },
+    "USDJPY=X": {
+      "regularMarketPrice": 149.32,
+      "currency": "JPY"
+    }
+  }
+}
