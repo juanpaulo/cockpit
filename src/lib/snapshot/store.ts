@@ -47,8 +47,12 @@ export class SnapshotStore {
       .prepare("SELECT payload FROM snapshots ORDER BY id DESC LIMIT ?")
       .all(limit) as { payload: string }[];
     for (const { payload } of rows) {
-      const parsed = snapshotSchema.safeParse(JSON.parse(payload));
-      if (parsed.success) return parsed.data;
+      try {
+        const parsed = snapshotSchema.safeParse(JSON.parse(payload));
+        if (parsed.success) return parsed.data;
+      } catch {
+        // Malformed JSON — fall through to the previous snapshot.
+      }
     }
     return undefined;
   }

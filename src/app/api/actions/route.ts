@@ -18,6 +18,15 @@ const actionSchema = z.object({
  */
 export async function POST(request: Request) {
   await connection();
+  // Writes need a real caller, not just CF-edge reachability: the identity
+  // Cloudflare Access injects (cf-access-authenticated-user-email), or a
+  // dev profile for mock development — matches the profile model.
+  const caller =
+    request.headers.get("cf-access-authenticated-user-email") ??
+    process.env.COCKPIT_DEV_PROFILE;
+  if (!caller) {
+    return Response.json({ error: "unauthenticated" }, { status: 401 });
+  }
   const body: unknown = await request.json().catch(() => null);
   const parsed = actionSchema.safeParse(body);
   if (!parsed.success) {

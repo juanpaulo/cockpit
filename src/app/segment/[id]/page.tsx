@@ -13,7 +13,8 @@ export const instant = false;
 async function SegmentView({ id }: { id: string }) {
   await connection();
   const dashboard = await loadDashboard(id);
-  const now = new Date(dashboard.fetchedAt);
+  // The wall clock — a stale snapshot only ages the SYNC label, never "now".
+  const now = new Date();
   return (
     <>
       <Header

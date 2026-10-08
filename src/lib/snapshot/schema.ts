@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { readoutSchema, sourceIdSchema } from "@/lib/readouts/types";
 
-const fetchedAt = z.string();
+const fetchedAt = z.iso.datetime();
 
 /** One source's contribution to a snapshot — same union shape as SensorResult. */
 export const snapshotSourceSchema = z.discriminatedUnion("ok", [
@@ -26,7 +26,7 @@ export const snapshotSourceSchema = z.discriminatedUnion("ok", [
  */
 export const snapshotSchema = z.object({
   /** ISO 8601 — when the collector run produced this snapshot. */
-  generatedAt: z.string(),
+  generatedAt: z.iso.datetime(),
   sources: z.array(snapshotSourceSchema).min(1),
 });
 

@@ -20,7 +20,16 @@ export async function POST(request: Request) {
   if (!authorized(request, token)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  const body: unknown = await request.json().catch(() => null);
+  const text = await request.text().catch(() => null);
+  if (!text || text.length > 256 * 1024) {
+    return Response.json({ error: "body too large or missing" }, { status: 413 });
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    return Response.json({ error: "invalid JSON" }, { status: 422 });
+  }
   const parsed = snapshotSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(

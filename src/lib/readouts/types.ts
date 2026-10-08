@@ -25,8 +25,11 @@ export const readoutSchema = z.object({
   title: z.string(),
   subtitle: z.string().optional(),
   /** ISO 8601 */
-  timestamp: z.string(),
-  url: z.string(),
+  timestamp: z.iso.datetime(),
+  /** Links must be http(s) — or empty for non-link rows (e.g. HA entities). */
+  url: z.string().refine((u) => u === "" || /^https?:\/\//i.test(u), {
+    message: "url must be http(s):// or empty",
+  }),
   status: readoutStatusSchema,
   /** Source-native tags and per-source extras (labels, calendar name, entity state…). */
   meta: z.record(z.string(), z.unknown()).optional(),
