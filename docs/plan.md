@@ -288,3 +288,74 @@ Each provider owns a `SymbolRef → provider symbol` mapper (`7203`+TSE →
 2. **Work segment:** stays a hidden placeholder in v1, folded into the
    layout rather than config — confirmed.
 3. **E2E runner:** Playwright for the responsive breakpoints — confirmed.
+4. **Connectors:** agent-driven for SaaS sources (Gmail, Calendar, Notion)
+   using the user's existing connectors; plain-HTTP fetch for sources
+   without connectors (HA REST via Cloudflare Tunnel, market quotes,
+   weather). Agent runs are covered by an existing subscription — see §6.
+
+## 6. Data plane: one collector run → snapshot → ingest
+
+Decided 2026-10. One scheduled agent run collects *all six* sources and
+POSTs a single validated snapshot; the web service is read-only against
+SQLite. Supersedes the "one API adapter per source" default from §2.
+
+### Shape
+
+```
+Devin automation (schedule, ~every 30 min)
+└─ collector session
+   ├─ MCP connectors:  Gmail, Calendar, Notion   (user's existing)
+   ├─ HTTP:            HA REST via CF Tunnel (service token)
+   │                   Yahoo quotes · Open-Meteo weather (keyless)
+   ├─ semantic pass:   needsReply/ask on mail, note/noteStatus on
+   │                   events, cross-source correlation — one context
+   ├─ deterministic rules table in prompt (severity, due labels)
+   └─ POST /api/ingest   (bearer INGEST_TOKEN + CF Access service token)
+                       ▼
+                 data/cockpit.db  — snapshots table (latest wins)
+                       ▼
+              Next.js web service — reads snapshot only
+```
+
+- **One run, one context.** Cross-source correlation ("this confirmation
+  mail ↔ that event ↔ this task") is why the SaaS sources go through an
+  agent at all — it needs all of them in a single context. Do not split
+  into per-source agent runs.
+- **All sources ride the same run.** HA is reachable via Cloudflare
+  Tunnel (Access service token + HA token), market is `yahoo-finance2`
+  over plain HTTPS, weather is Open-Meteo — all callable from the
+  session, so nothing except the web app runs on the home server.
+- **Monolithic snapshot, per-source health inside.** The `Snapshot` zod
+  contract carries `sources[]` — `{source, ok, fetchedAt, error?,
+  readouts[]}` per source, same union as `SensorResult`. A failed source
+  ages only its own section/SYS dot; a failed run keeps last-good.
+- **Market/weather are HTTP, not search.** A wrong quote looks
+  authoritative — keyless deterministic APIs (`yahoo-finance2`,
+  Open-Meteo) over LLM web search, always.
+- **Mock mode unchanged.** The agent's output contract IS the fixture
+  fields (`needsReply`, `ask`, `note`, `noteStatus`); fixtures stay the
+  dev path for all UI work.
+- **Cadence.** ~48 runs/day on the subscription; RRULE can thin nights.
+
+## 7. Actions channel (Controls)
+
+v1 was read-only; HA controls are now in scope. The web app gets a narrow
+write path — read + curated writes, not a proxy.
+
+- **`POST /api/actions`** → HA `POST /api/services/<domain>/<service>`
+  through the tunnel, same CF service-token + HA-token auth as reads.
+  Credential is server-side only.
+- **Allowlist, not proxy.** `config/home.yaml` declares controllable
+  entities and their allowed actions (`toggle`, `lock`, `unlock`, …) plus
+  a `confirm` flag; the route 403s anything not listed. A buggy or hostile
+  client can only flip the switches the config chose.
+- **Confirm for irreversible-feeling actions** (`lock.unlock`, covers):
+  two-tap in the UI; lights/fans are one tap.
+- **Post-write freshness.** After a write the route re-reads that one
+  entity via HA REST and returns the new state — the row updates in place;
+  the next snapshot converges. This is a deliberate, bounded exception to
+  "web never touches sources": writes are user-initiated and rare.
+- **Vocabulary:** these UI affordances are **Controls** on HOME SYS rows
+  (e.g. an amber `LOCK` control on the unlocked-door row that resolves the
+  warning in place). SYS strip's `READ-ONLY` label drops.
+- Untouched: the collector agent — it only ever reads.
