@@ -8,7 +8,11 @@ import type { Readout } from "@/lib/readouts/types";
 import { resolveSegments } from "@/lib/segments/mapper";
 import type { Segment } from "@/lib/segments/model";
 import { getSensors } from "@/lib/sensors/registry";
-import type { Sensor, SensorResult } from "@/lib/sensors/types";
+import type { Sensor, SensorContext, SensorResult } from "@/lib/sensors/types";
+import type { AppConfig } from "@/lib/config/app-config";
+import { SensorError } from "@/lib/errors";
+import type { Snapshot } from "@/lib/snapshot/schema";
+import { getSnapshotStore } from "@/lib/snapshot/store";
 
 export interface Dashboard {
   profile?: Profile;
@@ -35,9 +39,12 @@ export async function loadDashboard(onlySegment?: string): Promise<Dashboard> {
   const now = new Date();
   const ctx = { config, cache: new MemoryCache(), now };
   const sensors = getSensors(config);
-  const results = await Promise.all(
-    sensors.map(async (sensor) => ({ sensor, result: await sensor.fetchReadouts(ctx) })),
-  );
+  // Live mode reads the latest stored snapshot — the collector is the only
+  // writer — and reports a per-source error for anything absent, so a
+  // stale/missing source ages its own SYS dot instead of taking the board down.
+  const snapshot = config.dataMode === "live" ? getSnapshotStore().readLatest() : undefined;
+  const results = await collectResults(config, sensors, ctx, snapshot);
+  const snapshotAt = snapshot?.generatedAt ?? now.toISOString();
 
   // Weather feeds the header window, not the segment panels.
   const weatherResult = results.find((r) => r.sensor.id === "weather");
@@ -75,7 +82,49 @@ export async function loadDashboard(onlySegment?: string): Promise<Dashboard> {
     results,
     nextEvent,
     nowEvent,
-    fetchedAt: now.toISOString(),
+    fetchedAt: snapshotAt,
     dataMode: config.dataMode,
   };
+}
+
+async function collectResults(
+  config: AppConfig,
+  sensors: Sensor[],
+  ctx: SensorContext,
+  snapshot?: Snapshot,
+): Promise<{ sensor: Sensor; result: SensorResult }[]> {
+  if (config.dataMode === "mock") {
+    return Promise.all(
+      sensors.map(async (sensor) => ({
+        sensor,
+        result: await sensor.fetchReadouts(ctx),
+      })),
+    );
+  }
+
+  const bySource = new Map(snapshot?.sources.map((s) => [s.source, s]) ?? []);
+  return sensors.map((sensor) => {
+    const entry = bySource.get(sensor.id);
+    if (!entry) {
+      return {
+        sensor,
+        result: {
+          ok: false,
+          error: new SensorError(
+            snapshot ? "source absent from snapshot" : "no snapshot received yet",
+            "no_snapshot",
+          ),
+          fetchedAt: snapshot?.generatedAt ?? ctx.now.toISOString(),
+        },
+      };
+    }
+    const result: SensorResult = entry.ok
+      ? { ok: true, readouts: entry.readouts, fetchedAt: entry.fetchedAt }
+      : {
+          ok: false,
+          error: new SensorError(entry.error.message, entry.error.code),
+          fetchedAt: entry.fetchedAt,
+        };
+    return { sensor, result };
+  });
 }

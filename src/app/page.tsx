@@ -7,7 +7,8 @@ import { loadDashboard } from "@/lib/cockpit";
 async function Overview() {
   await connection();
   const dashboard = await loadDashboard();
-  const now = new Date(dashboard.fetchedAt);
+  // The wall clock — a stale snapshot only ages the SYNC label, never "now".
+  const now = new Date();
 
   return (
     <>
