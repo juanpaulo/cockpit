@@ -289,67 +289,73 @@ Each provider owns a `SymbolRef → provider symbol` mapper (`7203`+TSE →
    layout rather than config — confirmed.
 3. **E2E runner:** Playwright for the responsive breakpoints — confirmed.
 4. **Connectors:** agent-driven for SaaS sources (Gmail, Calendar, Notion)
-   using the user's existing connectors; direct adapters for sources
-   connectors can't reach (Home Assistant REST, market quotes). Agent runs
-   are covered by an existing subscription — see §6.
+   using the user's existing connectors; plain-HTTP fetch for sources
+   without connectors (HA REST via Cloudflare Tunnel, market quotes,
+   weather). Agent runs are covered by an existing subscription — see §6.
 
-## 6. Data plane: snapshot writer + agent sensors
+## 6. Data plane: one collector run → snapshot → ingest
 
-Decided 2026-10. Supersedes the "one API adapter per source" default from
-§2 for the SaaS sources; the `Sensor` interface itself is unchanged.
+Decided 2026-10. One scheduled agent run collects *all six* sources and
+POSTs a single validated snapshot; the web service is read-only against
+SQLite. Supersedes the "one API adapter per source" default from §2.
 
 ### Shape
 
 ```
-┌ collector (scheduled job, ~every 30 min) ─────────────────────┐
-│  ApiSensors    → Home Assistant REST, market quotes           │
-│  AgentSensors  → Gmail, Calendar, Notion via MCP connectors   │
-│  enrich        → cross-source correlation written by the      │
-│                  agent run (needsReply, ask, note)            │
-│  validate      → zod Snapshot schema                          │
-└──────────────────────┬────────────────────────────────────────┘
+Devin automation (schedule, ~every 30 min)
+└─ collector session
+   ├─ MCP connectors:  Gmail, Calendar, Notion   (user's existing)
+   ├─ HTTP:            HA REST via CF Tunnel (service token)
+   │                   Yahoo quotes · Open-Meteo weather (keyless)
+   ├─ semantic pass:   needsReply/ask on mail, note/noteStatus on
+   │                   events, cross-source correlation — one context
+   ├─ deterministic rules table in prompt (severity, due labels)
+   └─ POST /api/ingest   (bearer INGEST_TOKEN + CF Access service token)
                        ▼
-                 data/cockpit.db  (SQLite snapshot)
+                 data/cockpit.db  — snapshots table (latest wins)
                        ▼
               Next.js web service — reads snapshot only
 ```
 
-- **The frontend never calls a source.** Page render is a SQLite read;
-  `fetchedAt` / SYS dots reflect snapshot age, which is the real freshness
-  contract (README allows ~15 min; we refresh ~30).
-- **`collector` runs as a separate compose service** (cron in-container), so
-  the web process stays stateless and read-only. SQLite is the boundary:
-  the job writes a validated `Snapshot`, the web reads the latest row.
-- **Schema-validated handoff.** The `Snapshot` contract (readouts +
-  model-written fields `needsReply`, `ask`, `note`, `noteStatus`) is zod
-  types. An invalid or failed agent run leaves the previous snapshot in
-  place — the board just ages, it never corrupts.
+- **One run, one context.** Cross-source correlation ("this confirmation
+  mail ↔ that event ↔ this task") is why the SaaS sources go through an
+  agent at all — it needs all of them in a single context. Do not split
+  into per-source agent runs.
+- **All sources ride the same run.** HA is reachable via Cloudflare
+  Tunnel (Access service token + HA token), market is `yahoo-finance2`
+  over plain HTTPS, weather is Open-Meteo — all callable from the
+  session, so nothing except the web app runs on the home server.
+- **Monolithic snapshot, per-source health inside.** The `Snapshot` zod
+  contract carries `sources[]` — `{source, ok, fetchedAt, error?,
+  readouts[]}` per source, same union as `SensorResult`. A failed source
+  ages only its own section/SYS dot; a failed run keeps last-good.
+- **Market/weather are HTTP, not search.** A wrong quote looks
+  authoritative — keyless deterministic APIs (`yahoo-finance2`,
+  Open-Meteo) over LLM web search, always.
+- **Mock mode unchanged.** The agent's output contract IS the fixture
+  fields (`needsReply`, `ask`, `note`, `noteStatus`); fixtures stay the
+  dev path for all UI work.
+- **Cadence.** ~48 runs/day on the subscription; RRULE can thin nights.
 
-### AgentSensor vs ApiSensor
+## 7. Actions channel (Controls)
 
-Both implement `Sensor` / `fetchReadouts`; the registry chooses per source.
+v1 was read-only; HA controls are now in scope. The web app gets a narrow
+write path — read + curated writes, not a proxy.
 
-- **AgentSensor (Gmail, Calendar, Notion):** the agent runtime *is* the
-  transport — it calls the user's existing MCP connectors (auth already
-  handled there), normalizes to `Readout`s, and performs the semantic pass:
-  `needsReply`/`ask` on mail, `note`/`noteStatus` on events, and
-  cross-references between sources (e.g. a confirmation mail ↔ its event ↔
-  a related task). Correlation is a language task, not a join — this is the
-  reason for choosing agent sensors over API adapters.
-- **ApiSensor (Home Assistant, Investments):** connectors don't reach the
-  LAN or Yahoo — these stay direct adapters, cheap and deterministic.
-- **Swap-ability:** if a SaaS connector proves flaky, a source moves to a
-  direct API adapter without touching the frontend.
-
-### Guardrails
-
-- **Bounded context.** The agent emits normalized readouts (~a few KB per
-  snapshot), not raw inbox/calendar dumps. If correlation cost ever matters,
-  split into fetch pass + small annotate pass; not needed at v1 scale.
-- **Fallback on failure.** Keep last good snapshot; `SYNC` label exposes
-  staleness (this is already the design's empty/error-state rule).
-- **Mock mode unchanged.** `AgentSensor`'s dev path reads the same
-  fixtures — the `needsReply`/`ask`/`note` fixture fields are stand-ins for
-  what the agent will write in live mode, so all UI work stays testable.
-- **Cadence.** ~48 runs/day; reduce at night (e.g. hourly 23:00–07:00) if
-  subscription limits ever matter.
+- **`POST /api/actions`** → HA `POST /api/services/<domain>/<service>`
+  through the tunnel, same CF service-token + HA-token auth as reads.
+  Credential is server-side only.
+- **Allowlist, not proxy.** `config/home.yaml` declares controllable
+  entities and their allowed actions (`toggle`, `lock`, `unlock`, …) plus
+  a `confirm` flag; the route 403s anything not listed. A buggy or hostile
+  client can only flip the switches the config chose.
+- **Confirm for irreversible-feeling actions** (`lock.unlock`, covers):
+  two-tap in the UI; lights/fans are one tap.
+- **Post-write freshness.** After a write the route re-reads that one
+  entity via HA REST and returns the new state — the row updates in place;
+  the next snapshot converges. This is a deliberate, bounded exception to
+  "web never touches sources": writes are user-initiated and rare.
+- **Vocabulary:** these UI affordances are **Controls** on HOME SYS rows
+  (e.g. an amber `LOCK` control on the unlocked-door row that resolves the
+  warning in place). SYS strip's `READ-ONLY` label drops.
+- Untouched: the collector agent — it only ever reads.
