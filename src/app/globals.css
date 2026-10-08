@@ -1,6 +1,64 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=B612+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Cockpit design tokens. Colour meanings are fixed:
+   red warning · amber caution · green measured/normal ·
+   cyan units/NOW/selected · magenta next event. Never decorative. */
+@theme {
+  --color-bg: #0a1220;
+  --color-panel: #0f1a2b;
+  --color-raised: #13213a;
+  --color-readout: #050a12;
+  --color-line: #1c2940;
+  --color-line-soft: #172338;
+  --color-line-card: #22314c;
+  --color-bezel: #4c6a96;
+  --color-leader: #33476a;
+
+  --color-text: #e6edf5;
+  --color-text-2: #b9c6d8;
+  --color-muted: #8ea0b8;
+  --color-faint: #5f7290;
+
+  --color-warning: #f05252;
+  --color-caution: #f2b33d;
+  --color-advisory: #8ea0b8;
+  --color-ok: #34c77b;
+  --color-cyan: #2fd6f0;
+  --color-magenta: #e05ad8;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "B612 Mono", ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: #7fb0ff;
+}
+a:hover {
+  color: #b3d0ff;
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] > summary .disclosure-chevron {
+  transform: rotate(90deg);
+}
+.disclosure-chevron {
+  display: inline-block;
+  transition: transform 0.15s;
 }

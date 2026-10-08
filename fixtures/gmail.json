@@ -6,15 +6,19 @@
       "from": { "name": "Midori Aoki", "email": "midori.a@example.org" },
       "subject": "Sunday lunch plans",
       "snippet": "Can everyone make it around noon? I'll book the usual place.",
+      "needsReply": true,
+      "ask": "Confirm whether everyone can make it around noon.",
       "internalDate": "now-3h"
     },
     {
       "id": "thr_9c4d7e",
       "labels": ["INBOX", "UNREAD", "Cockpit/Investments"],
-      "from": { "name": "Brokerage Notice", "email": "notice@example-broker.jp" },
-      "subject": "Dividend statement available",
-      "snippet": "Your June dividend statement is now available for download.",
-      "internalDate": "now-1d"
+      "from": { "name": "Vendor Billing", "email": "billing@example-vendor.jp" },
+      "subject": "Invoice #2847",
+      "snippet": "¥128,000, payment due Mon 12 Oct.",
+      "needsReply": true,
+      "ask": "¥128,000, payment due Mon 12 Oct.",
+      "internalDate": "now-5h"
     },
     {
       "id": "thr_55b8a0",
@@ -22,7 +26,31 @@
       "from": { "name": "Kenta Sora", "email": "k.sora@example.net" },
       "subject": "Re: Weekend hiking route",
       "snippet": "Trailhead parking fills up early — let's aim for 7am.",
-      "internalDate": "now-2d"
+      "internalDate": "now-2h"
+    },
+    {
+      "id": "thr_77e2c1",
+      "labels": ["INBOX", "UNREAD"],
+      "from": { "name": "Example Bank", "email": "notice@example-bank.jp" },
+      "subject": "Card statement ready",
+      "snippet": "Your October statement is now available.",
+      "internalDate": "now-1h"
+    },
+    {
+      "id": "thr_88f3d2",
+      "labels": ["INBOX"],
+      "from": { "name": "GitHub", "email": "noreply@github.example" },
+      "subject": "PR #4827: changes requested",
+      "snippet": "Review feedback is waiting on feature/checkout-flow.",
+      "internalDate": "now-6h"
+    },
+    {
+      "id": "thr_99a4e3",
+      "labels": ["INBOX"],
+      "from": { "name": "Booking", "email": "confirm@booking.example" },
+      "subject": "Hotel confirmation",
+      "snippet": "Nikko Riverside Inn, 2 nights, check-in Sat 15:00.",
+      "internalDate": "now-7h"
     }
   ]
 }

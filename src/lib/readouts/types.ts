@@ -3,7 +3,8 @@ export type SourceId =
   | "calendar"
   | "notion-task"
   | "investment"
-  | "home-assistant";
+  | "home-assistant"
+  | "weather";
 
 export const SOURCE_IDS: readonly SourceId[] = [
   "gmail",
@@ -11,6 +12,7 @@ export const SOURCE_IDS: readonly SourceId[] = [
   "notion-task",
   "investment",
   "home-assistant",
+  "weather",
 ];
 
 export type ReadoutStatus = "advisory" | "caution" | "warning";
