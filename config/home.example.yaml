@@ -13,3 +13,13 @@ cards:
   - type: garage
     entities:
       - cover.example
+
+# Entities the app may act on via POST /api/actions — the allowlist.
+# Anything not listed here is rejected with 403; `confirm: true` gives the
+# action a two-tap confirm in the UI.
+controls:
+  - entity: lock.example
+    actions: [lock, unlock]
+    confirm: true
+  - entity: switch.example_light
+    actions: [toggle]

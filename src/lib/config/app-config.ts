@@ -13,11 +13,22 @@ const homeCardSchema = z.object({
   entities: z.array(z.string()),
 });
 
+/** An entity the app may act on via POST /api/actions — the allowlist. */
+const controlSchema = z.object({
+  entity: z.string(),
+  /** HA service names this entity accepts, e.g. ["toggle"], ["lock","unlock"]. */
+  actions: z.array(z.string()).min(1),
+  /** Two-tap confirm in the UI (locks, covers, anything that feels irreversible). */
+  confirm: z.boolean().default(false),
+});
+
 export const homeFileSchema = z.object({
   cards: z.array(homeCardSchema),
+  controls: z.array(controlSchema).default([]),
 });
 
 export type HomeCard = z.infer<typeof homeCardSchema>;
+export type Control = z.infer<typeof controlSchema>;
 
 export interface AppConfig {
   dataMode: "mock" | "live";
@@ -26,6 +37,8 @@ export interface AppConfig {
   segments: Segment[];
   profiles: Profile[];
   home: HomeCard[];
+  /** Controllable entities — anything absent is rejected by /api/actions. */
+  controls: Control[];
   env: NodeJS.ProcessEnv;
 }
 
@@ -58,12 +71,14 @@ export function loadAppConfig(): AppConfig {
   if (!segments) {
     throw new ConfigError("Missing config/segments.example.yaml — the committed template should exist.");
   }
+  const home = loadYamlConfig("home", homeFileSchema, { required: false });
   return {
     dataMode,
     mockSensors: parseMockSensors(),
     segments: segments.segments,
     profiles: loadYamlConfig("profiles", profilesFileSchema, { required })?.profiles ?? [],
-    home: loadYamlConfig("home", homeFileSchema, { required: false })?.cards ?? [],
+    home: home?.cards ?? [],
+    controls: home?.controls ?? [],
     env: process.env,
   };
 }
