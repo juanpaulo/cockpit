@@ -288,3 +288,68 @@ Each provider owns a `SymbolRef → provider symbol` mapper (`7203`+TSE →
 2. **Work segment:** stays a hidden placeholder in v1, folded into the
    layout rather than config — confirmed.
 3. **E2E runner:** Playwright for the responsive breakpoints — confirmed.
+4. **Connectors:** agent-driven for SaaS sources (Gmail, Calendar, Notion)
+   using the user's existing connectors; direct adapters for sources
+   connectors can't reach (Home Assistant REST, market quotes). Agent runs
+   are covered by an existing subscription — see §6.
+
+## 6. Data plane: snapshot writer + agent sensors
+
+Decided 2026-10. Supersedes the "one API adapter per source" default from
+§2 for the SaaS sources; the `Sensor` interface itself is unchanged.
+
+### Shape
+
+```
+┌ collector (scheduled job, ~every 30 min) ─────────────────────┐
+│  ApiSensors    → Home Assistant REST, market quotes           │
+│  AgentSensors  → Gmail, Calendar, Notion via MCP connectors   │
+│  enrich        → cross-source correlation written by the      │
+│                  agent run (needsReply, ask, note)            │
+│  validate      → zod Snapshot schema                          │
+└──────────────────────┬────────────────────────────────────────┘
+                       ▼
+                 data/cockpit.db  (SQLite snapshot)
+                       ▼
+              Next.js web service — reads snapshot only
+```
+
+- **The frontend never calls a source.** Page render is a SQLite read;
+  `fetchedAt` / SYS dots reflect snapshot age, which is the real freshness
+  contract (README allows ~15 min; we refresh ~30).
+- **`collector` runs as a separate compose service** (cron in-container), so
+  the web process stays stateless and read-only. SQLite is the boundary:
+  the job writes a validated `Snapshot`, the web reads the latest row.
+- **Schema-validated handoff.** The `Snapshot` contract (readouts +
+  model-written fields `needsReply`, `ask`, `note`, `noteStatus`) is zod
+  types. An invalid or failed agent run leaves the previous snapshot in
+  place — the board just ages, it never corrupts.
+
+### AgentSensor vs ApiSensor
+
+Both implement `Sensor` / `fetchReadouts`; the registry chooses per source.
+
+- **AgentSensor (Gmail, Calendar, Notion):** the agent runtime *is* the
+  transport — it calls the user's existing MCP connectors (auth already
+  handled there), normalizes to `Readout`s, and performs the semantic pass:
+  `needsReply`/`ask` on mail, `note`/`noteStatus` on events, and
+  cross-references between sources (e.g. a confirmation mail ↔ its event ↔
+  a related task). Correlation is a language task, not a join — this is the
+  reason for choosing agent sensors over API adapters.
+- **ApiSensor (Home Assistant, Investments):** connectors don't reach the
+  LAN or Yahoo — these stay direct adapters, cheap and deterministic.
+- **Swap-ability:** if a SaaS connector proves flaky, a source moves to a
+  direct API adapter without touching the frontend.
+
+### Guardrails
+
+- **Bounded context.** The agent emits normalized readouts (~a few KB per
+  snapshot), not raw inbox/calendar dumps. If correlation cost ever matters,
+  split into fetch pass + small annotate pass; not needed at v1 scale.
+- **Fallback on failure.** Keep last good snapshot; `SYNC` label exposes
+  staleness (this is already the design's empty/error-state rule).
+- **Mock mode unchanged.** `AgentSensor`'s dev path reads the same
+  fixtures — the `needsReply`/`ask`/`note` fixture fields are stand-ins for
+  what the agent will write in live mode, so all UI work stays testable.
+- **Cadence.** ~48 runs/day; reduce at night (e.g. hourly 23:00–07:00) if
+  subscription limits ever matter.
