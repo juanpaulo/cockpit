@@ -96,16 +96,23 @@ export function CommsPanel({
         <p className="py-1 text-sm text-muted">All clear.</p>
       )}
       <div className="flex flex-col">
-        {view.tasks.map((t) => (
-          <div key={t.id} className="flex min-h-10 items-center gap-2.5 lg:min-h-0 lg:py-[9px]">
-            <span className="h-3.5 w-3.5 flex-none rounded-sm border-[1.5px] border-faint" />
-            <span className="text-sm text-text">{t.title}</span>
-            <span className="flex-1 border-b border-dotted border-leader" />
-            <span className={`font-mono text-xs ${DUE_COLOR[t.status]}`}>
-              {dueLabel(t.timestamp, new Date())}
-            </span>
-          </div>
-        ))}
+        {view.tasks.map((t) => {
+          const Row = t.url ? "a" : "div";
+          return (
+            <Row
+              key={t.id}
+              {...(t.url ? { href: t.url } : {})}
+              className="flex min-h-10 items-center gap-2.5 no-underline lg:min-h-0 lg:py-[9px]"
+            >
+              <span className="h-3.5 w-3.5 flex-none rounded-sm border-[1.5px] border-faint" />
+              <span className="text-sm text-text">{t.title}</span>
+              <span className="flex-1 border-b border-dotted border-leader" />
+              <span className={`font-mono text-xs ${DUE_COLOR[t.status]}`}>
+                {dueLabel(t.timestamp, new Date())}
+              </span>
+            </Row>
+          );
+        })}
       </div>
       {empty && <p className="py-1 text-sm text-muted">No replies owed.</p>}
     </Panel>
@@ -115,18 +122,22 @@ export function CommsPanel({
 function FyiRows({ view }: { view: CommsView }) {
   return (
     <div className="flex flex-col">
-      {view.fyi.map((m) => (
-        <div
-          key={m.id}
-          className="grid grid-cols-[1fr_auto] gap-3 border-b border-line-soft px-0.5 py-2 text-[13px]"
-        >
-          <span className="truncate">
-            <span className="text-muted">{String(m.meta?.from ?? "")}</span>
-            <span className="text-text-2"> · {m.title}</span>
-          </span>
-          <span className="font-mono text-xs text-muted">{hhmm(m.timestamp)}</span>
-        </div>
-      ))}
+      {view.fyi.map((m) => {
+        const Row = m.url ? "a" : "div";
+        return (
+          <Row
+            key={m.id}
+            {...(m.url ? { href: m.url } : {})}
+            className="grid grid-cols-[1fr_auto] gap-3 border-b border-line-soft px-0.5 py-2 text-[13px] no-underline"
+          >
+            <span className="truncate">
+              <span className="text-muted">{String(m.meta?.from ?? "")}</span>
+              <span className="text-text-2"> · {m.title}</span>
+            </span>
+            <span className="font-mono text-xs text-muted">{hhmm(m.timestamp)}</span>
+          </Row>
+        );
+      })}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import type { Readout } from "@/lib/readouts/types";
-import { eventRange } from "@/lib/format";
+import { eventRange, hhmm } from "@/lib/format";
 import { Countdown } from "@/components/layout/clock";
 
-/** Mobile hero card for the next event (hidden on lg+ — the header shows it). */
-export function NextUpCard({ event }: { event: Readout }) {
+/** Mobile hero card for the next/ongoing event (hidden on lg+). */
+export function NextUpCard({ event, ongoing }: { event: Readout; ongoing?: boolean }) {
   const end = typeof event.meta?.end === "string" ? event.meta.end : undefined;
   const c = "absolute w-3 h-3 border-bezel pointer-events-none";
   return (
@@ -17,16 +17,29 @@ export function NextUpCard({ event }: { event: Readout }) {
       <span aria-hidden className={`${c} -bottom-px -right-px rounded-br-xl border-b-2 border-r-2`} />
       <div className="flex items-end justify-between">
         <div className="flex flex-col gap-0.5">
-          <span className="font-mono text-[11px] tracking-[0.12em] text-magenta">
-            NEXT WPT · {eventRange(event.timestamp, end)}
+          <span
+            className={`font-mono text-[11px] tracking-[0.12em] ${ongoing ? "text-cyan" : "text-magenta"}`}
+          >
+            {ongoing ? "IN PROGRESS" : "NEXT WPT"} · {eventRange(event.timestamp, end)}
           </span>
           <span className="text-[22px] font-semibold leading-tight">{event.title}</span>
         </div>
         <div className="flex flex-col items-end rounded border border-line-card bg-readout px-2.5 py-1 font-mono">
-          <span className="text-[9px] tracking-[0.14em] text-muted">STARTS</span>
-          <span className="text-[22px] leading-[1.1]">
-            <Countdown to={event.timestamp} />
-          </span>
+          {ongoing ? (
+            <>
+              <span className="text-[9px] tracking-[0.14em] text-muted">ENDS</span>
+              <span className="text-[22px] leading-[1.1] text-cyan">
+                {end ? hhmm(end) : "—"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-[9px] tracking-[0.14em] text-muted">STARTS</span>
+              <span className="text-[22px] leading-[1.1]">
+                <Countdown to={event.timestamp} />
+              </span>
+            </>
+          )}
         </div>
       </div>
       {event.subtitle && <span className="text-[13px] text-text-2">{event.subtitle}</span>}

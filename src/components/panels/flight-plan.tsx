@@ -61,9 +61,11 @@ function EventRow({ e }: { e: PlanView["events"][number] }) {
   const end = typeof r.meta?.end === "string" ? r.meta.end : undefined;
   const note = typeof r.meta?.note === "string" ? r.meta.note : undefined;
   const noteStatus = r.meta?.noteStatus === "caution" ? "caution" : "advisory";
+  const Row = r.url ? "a" : "div";
   return (
-    <div
-      className={`grid grid-cols-[52px_1fr] gap-2.5 border-b border-line-soft py-2.5 last:border-b-0 sm:grid-cols-[110px_1fr] ${
+    <Row
+      {...(r.url ? { href: r.url } : {})}
+      className={`grid grid-cols-[52px_1fr] gap-2.5 border-b border-line-soft py-2.5 last:border-b-0 no-underline sm:grid-cols-[110px_1fr] ${
         e.isPast ? "opacity-45" : ""
       }`}
     >
@@ -90,6 +92,6 @@ function EventRow({ e }: { e: PlanView["events"][number] }) {
           </span>
         )}
       </div>
-    </div>
+    </Row>
   );
 }

@@ -20,6 +20,7 @@ async function SegmentView({ id }: { id: string }) {
         segments={dashboard.segments}
         weather={dashboard.weather}
         nextEvent={dashboard.nextEvent}
+        nowEvent={dashboard.nowEvent}
         now={now}
       />
       <DashboardView d={dashboard} now={now} scoped />

@@ -15,6 +15,7 @@ async function Overview() {
         segments={dashboard.segments}
         weather={dashboard.weather}
         nextEvent={dashboard.nextEvent}
+        nowEvent={dashboard.nowEvent}
         now={now}
       />
       <DashboardView d={dashboard} now={now} />

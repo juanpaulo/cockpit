@@ -76,9 +76,17 @@ export interface PlanView {
 }
 
 export function planView(items: Readout[], now: Date): PlanView {
+  const todayStart = new Date(now).setHours(0, 0, 0, 0);
   const todayEnd = new Date(now).setHours(23, 59, 59, 999);
   const events = items
-    .filter((r) => r.source === "calendar" && new Date(r.timestamp).getTime() <= todayEnd)
+    .filter((r) => {
+      if (r.source !== "calendar") return false;
+      const start = new Date(r.timestamp).getTime();
+      const endStr = typeof r.meta?.end === "string" ? r.meta.end : r.timestamp;
+      const end = new Date(endStr).getTime();
+      // Events overlapping today: not entirely before today, not after today.
+      return end >= todayStart && start <= todayEnd;
+    })
     .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp));
   const nextIdx = events.findIndex((r) => {
     const end = typeof r.meta?.end === "string" ? new Date(r.meta.end) : new Date(r.timestamp);
@@ -91,7 +99,9 @@ export function planView(items: Readout[], now: Date): PlanView {
       isNext: i === nextIdx,
     })),
     pastTitles:
-      nextIdx > 0 ? events.slice(0, nextIdx).map((r) => r.title) : [],
+      nextIdx === -1
+        ? events.map((r) => r.title)
+        : events.slice(0, nextIdx).map((r) => r.title),
     leftToday: nextIdx === -1 ? 0 : events.length - nextIdx,
   };
 }

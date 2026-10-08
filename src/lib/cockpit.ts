@@ -19,7 +19,10 @@ export interface Dashboard {
   weather?: Readout;
   /** Per-source fetch results, for the SYS strip and failed-sensor errors. */
   results: { sensor: Sensor; result: SensorResult }[];
+  /** Earliest event whose start is still ahead — feeds the countdowns. */
   nextEvent?: Readout;
+  /** Event currently in progress (start <= now < end), if any. */
+  nowEvent?: Readout;
   fetchedAt: string;
   dataMode: "mock" | "live";
 }
@@ -50,13 +53,19 @@ export async function loadDashboard(onlySegment?: string): Promise<Dashboard> {
   const visible = filterReadouts(all, profile);
   const items = onlySegment ? visible.filter((r) => r.segment === onlySegment) : visible;
 
-  const nextEvent = items
-    .filter((r) => {
-      if (r.source !== "calendar") return false;
-      const end = typeof r.meta?.end === "string" ? r.meta.end : r.timestamp;
-      return new Date(end).getTime() >= now.getTime();
-    })
-    .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp))[0];
+  const events = items
+    .filter((r) => r.source === "calendar")
+    .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp));
+  const eventEnd = (r: Readout) =>
+    typeof r.meta?.end === "string" ? r.meta.end : r.timestamp;
+  const nextEvent = events.find(
+    (r) => new Date(r.timestamp).getTime() > now.getTime(),
+  );
+  const nowEvent = events.find(
+    (r) =>
+      new Date(r.timestamp).getTime() <= now.getTime() &&
+      new Date(eventEnd(r)).getTime() >= now.getTime(),
+  );
 
   return {
     profile,
@@ -65,6 +74,7 @@ export async function loadDashboard(onlySegment?: string): Promise<Dashboard> {
     weather,
     results,
     nextEvent,
+    nowEvent,
     fetchedAt: now.toISOString(),
     dataMode: config.dataMode,
   };

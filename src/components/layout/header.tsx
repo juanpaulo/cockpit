@@ -1,6 +1,6 @@
 import type { Readout } from "@/lib/readouts/types";
 import type { Segment } from "@/lib/segments/model";
-import { readoutDate } from "@/lib/format";
+import { hhmm, readoutDate } from "@/lib/format";
 import { ReadoutWindow } from "@/components/ui/panel";
 import { Countdown, TickingClock } from "./clock";
 import { SegmentSwitch } from "./segment-switch";
@@ -18,11 +18,13 @@ export function Header({
   segments,
   weather,
   nextEvent,
+  nowEvent,
   now,
 }: {
   segments: Segment[];
   weather?: Readout;
   nextEvent?: Readout;
+  nowEvent?: Readout;
   now: Date;
 }) {
   const tempC = weather ? Number(weather.meta?.tempC) : undefined;
@@ -54,8 +56,13 @@ export function Header({
             "—"
           )}
         </ReadoutWindow>
+        {nowEvent && (
+          <ReadoutWindow label={`NOW · ${nowEvent.title.toUpperCase()} UNTIL ${hhmm(String(nowEvent.meta?.end ?? nowEvent.timestamp))}`}>
+            <span className="text-cyan">IN PROGRESS</span>
+          </ReadoutWindow>
+        )}
         {nextEvent && (
-          <ReadoutWindow label={`NEXT · ${nextEvent.title.toUpperCase()} ${nextEvent.timestamp.slice(11, 16)}`}>
+          <ReadoutWindow label={`NEXT · ${nextEvent.title.toUpperCase()} ${hhmm(nextEvent.timestamp)}`}>
             <Countdown to={nextEvent.timestamp} />
           </ReadoutWindow>
         )}

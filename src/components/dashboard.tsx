@@ -49,7 +49,11 @@ export function DashboardView({
     gmailResult?.ok === false ||
     taskResult?.ok === false;
   const showPlan = !scoped || plan.events.length > 0 || calResult?.ok === false;
-  const showMarket = !scoped || market.holdings.length > 0 || mktResult?.ok === false;
+  const showMarket =
+    !scoped ||
+    market.holdings.length > 0 ||
+    market.keyDates.length > 0 ||
+    mktResult?.ok === false;
   const showHome = !scoped || home.length > 0 || haResult?.ok === false;
 
   const tabs = [
@@ -63,7 +67,9 @@ export function DashboardView({
   return (
     <>
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3.5 pb-28 pt-4 sm:px-6 lg:pb-10">
-        {d.nextEvent && <NextUpCard event={d.nextEvent} />}
+        {(d.nowEvent ?? d.nextEvent) && (
+          <NextUpCard event={(d.nowEvent ?? d.nextEvent)!} ongoing={!!d.nowEvent} />
+        )}
         <NeedsYou items={need.items} overflow={need.overflow} />
 
         <div className="flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-start">

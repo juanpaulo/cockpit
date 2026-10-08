@@ -45,12 +45,15 @@ export function MarketPanel({
         </p>
       )}
       {view.holdings.map((h) => {
+        const hasQuote = h.meta?.changePercent !== undefined && h.meta?.currency !== undefined;
         const chg = Number(h.meta?.changePercent ?? 0);
         const up = chg >= 0;
+        const Row = h.url ? "a" : "div";
         return (
-          <div
+          <Row
             key={h.id}
-            className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2.5 border-b border-line-soft py-[9px] last:border-b-0"
+            {...(h.url ? { href: h.url } : {})}
+            className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2.5 border-b border-line-soft py-[9px] no-underline last:border-b-0"
           >
             <span className="flex min-w-0 flex-col">
               <span className="font-mono text-sm">{h.title}</span>
@@ -61,30 +64,42 @@ export function MarketPanel({
             {Array.isArray(h.meta?.spark) && h.meta.spark.length > 1 && (
               <Sparkline points={h.meta.spark as number[]} up={up} />
             )}
-            <span
-              className={`text-right font-mono text-[13px] ${up ? "text-ok" : "text-warning"}`}
-            >
-              {signedPct(chg)}
-            </span>
-            <span className="min-w-[84px] text-right font-mono text-[13px]">
-              {jpy(Number(h.meta?.valueJpy ?? 0))}
-            </span>
-          </div>
+            {hasQuote ? (
+              <>
+                <span
+                  className={`text-right font-mono text-[13px] ${up ? "text-ok" : "text-warning"}`}
+                >
+                  {signedPct(chg)}
+                </span>
+                <span className="min-w-[84px] text-right font-mono text-[13px]">
+                  {jpy(Number(h.meta?.valueJpy ?? 0))}
+                </span>
+              </>
+            ) : (
+              <span className="col-span-2 text-right font-mono text-[13px] text-caution">
+                NO QUOTE
+              </span>
+            )}
+          </Row>
         );
       })}
-      {view.keyDates.map((d) => (
-        <div
-          key={d.id}
-          className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-line-soft py-[9px] text-[13px] last:border-b-0"
-        >
-          <span className="truncate text-text-2">{d.title}</span>
-          <span
-            className={`font-mono text-xs ${d.status === "caution" ? "text-caution" : "text-muted"}`}
+      {view.keyDates.map((d) => {
+        const Row = d.url ? "a" : "div";
+        return (
+          <Row
+            key={d.id}
+            {...(d.url ? { href: d.url } : {})}
+            className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-line-soft py-[9px] text-[13px] no-underline last:border-b-0"
           >
-            {dueLabel(d.timestamp, new Date())}
-          </span>
-        </div>
-      ))}
+            <span className="truncate text-text-2">{d.title}</span>
+            <span
+              className={`font-mono text-xs ${d.status === "caution" ? "text-caution" : "text-muted"}`}
+            >
+              {dueLabel(d.timestamp, new Date())}
+            </span>
+          </Row>
+        );
+      })}
       {total && (
         <div className="flex items-baseline justify-between pt-2.5">
           <span className="font-mono text-xs font-bold tracking-[0.14em]">TOTAL</span>
