@@ -41,9 +41,11 @@ const quotesSchema = z.object({
   quotes: z.record(
     z.string(),
     z.object({
+      longName: z.string().optional(),
       regularMarketPrice: z.number(),
       currency: z.string(),
       regularMarketChangePercent: z.number().optional(),
+      spark30d: z.array(z.number()).optional(),
     }),
   ),
 });
@@ -85,19 +87,20 @@ export class MockInvestmentSensor implements Sensor {
         source: "investment",
         segment: "",
         title: `${symbol}`,
-        subtitle: quote
-          ? `${qty} × ${quote.currency} ${price.toLocaleString()}`
-          : `${qty} — no quote`,
+        subtitle: quote?.longName,
         timestamp: now.toISOString(),
         url: `https://finance.yahoo.com/quote/${symbol}`,
         status: quote ? "advisory" : "caution",
         meta: {
           kind: "holding",
           exchange,
+          name: quote?.longName,
           quantity: qty,
           price,
           currency: quote?.currency,
           changePercent: quote?.regularMarketChangePercent,
+          valueJpy: qty * price * fx,
+          spark: quote?.spark30d,
         },
       });
     }

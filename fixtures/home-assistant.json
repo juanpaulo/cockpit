@@ -1,32 +1,51 @@
 [
   {
-    "entity_id": "sensor.rooftop_solar_power",
-    "state": "2430",
-    "last_changed": "now-5m",
-    "attributes": { "friendly_name": "Solar power", "unit_of_measurement": "W" }
+    "entity_id": "lock.front_door",
+    "state": "unlocked",
+    "last_changed": "now-25m",
+    "attributes": { "friendly_name": "Front door", "area": "Entrance" }
+  },
+  {
+    "entity_id": "cover.greenhouse_vent",
+    "state": "open",
+    "last_changed": "now-2h",
+    "attributes": { "friendly_name": "Greenhouse vent", "area": "Outdoor" }
+  },
+  {
+    "entity_id": "sensor.outdoor_cameras_motion",
+    "state": "clear",
+    "last_changed": "now-8m",
+    "attributes": { "friendly_name": "Cameras (6)", "area": "Outdoor" }
+  },
+  {
+    "entity_id": "climate.office",
+    "state": "23.4",
+    "last_changed": "now-12m",
+    "attributes": {
+      "friendly_name": "Office",
+      "area": "Office",
+      "unit_of_measurement": "°C",
+      "device_class": "temperature"
+    }
+  },
+  {
+    "entity_id": "sensor.office_humidity",
+    "state": "52",
+    "last_changed": "now-12m",
+    "attributes": {
+      "friendly_name": "Office",
+      "area": "Humidity",
+      "unit_of_measurement": "%"
+    }
   },
   {
     "entity_id": "sensor.rooftop_solar_energy_today",
     "state": "14.2",
-    "last_changed": "now-20m",
-    "attributes": { "friendly_name": "Solar energy today", "unit_of_measurement": "kWh" }
-  },
-  {
-    "entity_id": "lock.front_door",
-    "state": "unlocked",
-    "last_changed": "now-25m",
-    "attributes": { "friendly_name": "Front door" }
-  },
-  {
-    "entity_id": "climate.living_room",
-    "state": "cool",
-    "last_changed": "now-1h",
-    "attributes": { "friendly_name": "Living room", "current_temperature": 24.5 }
-  },
-  {
-    "entity_id": "cover.garage_door",
-    "state": "closed",
-    "last_changed": "now-6h",
-    "attributes": { "friendly_name": "Garage door" }
+    "last_changed": "now-2m",
+    "attributes": {
+      "friendly_name": "Solar",
+      "area": "Today so far",
+      "unit_of_measurement": "kWh"
+    }
   }
 ]

@@ -1,12 +1,32 @@
 {
   "items": [
     {
+      "id": "evt_p01",
+      "summary": "Homeschool",
+      "calendar": "Family",
+      "location": "Home",
+      "start": { "dateTime": "now-5h" },
+      "end": { "dateTime": "now-3h-30m" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_p01"
+    },
+    {
+      "id": "evt_p02",
+      "summary": "Weekly 1:1",
+      "calendar": "Personal",
+      "location": "Zoom",
+      "start": { "dateTime": "now-3h" },
+      "end": { "dateTime": "now-2h-30m" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_p02"
+    },
+    {
       "id": "evt_d01",
       "summary": "Dentist appointment",
       "calendar": "Family",
-      "location": "Hoshino Dental Clinic",
+      "location": "Hoshino Dental Clinic, 2F",
       "start": { "dateTime": "now+45m" },
       "end": { "dateTime": "now+105m" },
+      "note": "Leave 20 min early",
+      "noteStatus": "advisory",
       "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d01"
     },
     {
@@ -15,7 +35,28 @@
       "calendar": "Family",
       "start": { "dateTime": "now+5h" },
       "end": { "dateTime": "now+5h+30m" },
+      "note": "Back home 15 min buffer",
       "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d02"
+    },
+    {
+      "id": "evt_d05",
+      "summary": "Work on proposal",
+      "calendar": "Personal",
+      "location": "Home office",
+      "start": { "dateTime": "now+7h" },
+      "end": { "dateTime": "now+8h" },
+      "note": "Vendor invoice due today too",
+      "noteStatus": "caution",
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d05"
+    },
+    {
+      "id": "evt_d06",
+      "summary": "Dinner out",
+      "calendar": "Family",
+      "location": "Izakaya, Machida",
+      "start": { "dateTime": "now+9h" },
+      "end": { "dateTime": "now+10h" },
+      "htmlLink": "https://calendar.google.com/calendar/event?eid=evt_d06"
     },
     {
       "id": "evt_d03",

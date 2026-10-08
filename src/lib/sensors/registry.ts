@@ -4,6 +4,7 @@ import { MockGmailSensor } from "@/lib/mocks/gmail";
 import { MockHomeAssistantSensor } from "@/lib/mocks/home-assistant";
 import { MockInvestmentSensor } from "@/lib/mocks/investment";
 import { MockNotionTasksSensor } from "@/lib/mocks/notion-tasks";
+import { MockWeatherSensor } from "@/lib/mocks/weather";
 import type { AppConfig } from "@/lib/config/app-config";
 import type { SourceId } from "@/lib/readouts/types";
 import type { Sensor, SensorResult } from "./types";
@@ -14,6 +15,7 @@ const MOCK_SENSORS: Record<SourceId, () => Sensor> = {
   "notion-task": () => new MockNotionTasksSensor(),
   investment: () => new MockInvestmentSensor(),
   "home-assistant": () => new MockHomeAssistantSensor(),
+  weather: () => new MockWeatherSensor(),
 };
 
 const NAMES: Record<SourceId, string> = {
@@ -22,6 +24,7 @@ const NAMES: Record<SourceId, string> = {
   "notion-task": "Notion tasks",
   investment: "Investments",
   "home-assistant": "Home Assistant",
+  weather: "Weather",
 };
 
 // Placeholder for sources whose live adapter lands in a later build step.

@@ -12,6 +12,9 @@ const fixtureSchema = z.object({
       location: z.string().optional(),
       start: z.object({ dateTime: z.string() }),
       end: z.object({ dateTime: z.string() }),
+      // Fixture stand-ins for the future note writer (leave-by, conflicts).
+      note: z.string().optional(),
+      noteStatus: z.enum(["advisory", "caution"]).optional(),
       htmlLink: z.string(),
     }),
   ),
@@ -36,7 +39,13 @@ export class MockCalendarSensor implements Sensor {
         timestamp: e.start.dateTime,
         url: e.htmlLink,
         status: startsIn > 0 && startsIn <= SOON_MS ? "caution" : "advisory",
-        meta: { calendar: e.calendar, end: e.end.dateTime },
+        meta: {
+          calendar: e.calendar,
+          end: e.end.dateTime,
+          location: e.location,
+          note: e.note,
+          noteStatus: e.noteStatus ?? "advisory",
+        },
       };
     });
     return { ok: true, readouts, fetchedAt: now.toISOString() };

@@ -11,6 +11,9 @@ const fixtureSchema = z.object({
       from: z.object({ name: z.string(), email: z.string() }),
       subject: z.string(),
       snippet: z.string(),
+      // Fixture stand-ins for the future reply classifier/summarizer.
+      needsReply: z.boolean().optional(),
+      ask: z.string().optional(),
       internalDate: z.string(),
     }),
   ),
@@ -27,11 +30,18 @@ export class MockGmailSensor implements Sensor {
       source: "gmail",
       segment: "",
       title: t.subject,
-      subtitle: `${t.from.name} — ${t.snippet}`,
+      subtitle: t.needsReply ? t.ask : `${t.from.name} — ${t.snippet}`,
       timestamp: t.internalDate,
       url: `https://mail.google.com/mail/u/0/#all/${t.id}`,
-      status: "advisory",
-      meta: { labels: t.labels, unread: t.labels.includes("UNREAD") },
+      status: t.needsReply ? "caution" : "advisory",
+      meta: {
+        labels: t.labels,
+        unread: t.labels.includes("UNREAD"),
+        needsReply: t.needsReply ?? false,
+        from: t.from.name,
+        ask: t.ask,
+        snippet: t.snippet,
+      },
     }));
     return { ok: true, readouts, fetchedAt: now.toISOString() };
   }
