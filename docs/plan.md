@@ -1,7 +1,7 @@
 # Cockpit — Architecture Plan (v1)
 
 Derived from `README.md`. This document proposes the folder structure, the
-`CockpitItem` type and integration interface, the mock-mode design, and a
+`Readout` type and sensor interface, the mock-mode design, and a
 market data provider for the Investments segment. No application code is
 written in this step; the snippets below are proposals to be implemented in
 later build steps.
@@ -34,17 +34,17 @@ cockpit/
 │   │   ├── segment/[id]/page.tsx  # per-segment view
 │   │   └── api/                   # minimal: /api/health, OAuth callbacks
 │   ├── components/
-│   │   ├── cards/                 # one card type per source
+│   │   ├── instruments/           # one instrument type per sensor
 │   │   ├── layout/                # phone tabs / tablet grid / desktop sidebar
 │   │   └── ui/                    # primitives (Card, Badge, Timestamp, ...)
 │   ├── lib/
 │   │   ├── auth/                  # Cloudflare Access JWT verify, email → profile
 │   │   ├── config/                # YAML loaders + zod validation, .example fallback
 │   │   ├── segments/              # segment tree + tag → segment mapping
-│   │   ├── profiles/              # profile model + item filtering
-│   │   ├── items/                 # CockpitItem types, grouping/sorting helpers
-│   │   ├── integrations/
-│   │   │   ├── types.ts           # Integration interface (below)
+│   │   ├── profiles/              # profile model + readout filtering
+│   │   ├── readouts/              # Readout types, grouping/sorting helpers
+│   │   ├── sensors/
+│   │   │   ├── types.ts           # Sensor interface (below)
 │   │   │   ├── registry.ts        # picks live vs mock impls via DATA_MODE
 │   │   │   ├── gmail/
 │   │   │   ├── calendar/
@@ -55,9 +55,9 @@ cockpit/
 │   │   │   ├── types.ts
 │   │   │   ├── yahoo.ts           # primary (see §4)
 │   │   │   └── stooq.ts           # fallback (see §4)
-│   │   ├── mocks/                 # fixture loader + mock integrations
+│   │   ├── mocks/                 # fixture loader + mock sensors
 │   │   ├── cache/                 # SQLite access, price cache (15 min TTL)
-│   │   └── errors.ts              # IntegrationError, ConfigError
+│   │   └── errors.ts              # SensorError, ConfigError
 ├── tests/                         # unit + e2e (mock mode only)
 ├── .env.example
 ├── docker-compose.yml
@@ -67,7 +67,7 @@ cockpit/
 
 Notes:
 
-- All external calls live under `src/lib/integrations/` and
+- All external calls live under `src/lib/sensors/` and
   `src/lib/market-data/`. Nothing in `src/app` or `src/components` imports a
   vendor SDK directly.
 - `src/lib/auth/` is the only code that reads `Cf-Access-*` headers; pages
@@ -76,9 +76,22 @@ Notes:
   `src/lib/segments/` and `src/lib/profiles/` (`*.test.ts`); e2e tests live in
   `tests/e2e/`.
 
-## 2. `CockpitItem` and the integration interface
+## 2. `Readout` and the sensor interface
 
-### Item shape
+Glossary (cockpit theme):
+
+| Term | Meaning |
+|---|---|
+| **Sensor** | A data-source adapter (Gmail, Calendar, Notion, HA, …) that emits readouts. |
+| **Readout** | One normalized item shown on the dashboard (an email, event, task, holding, entity). |
+| **Instrument** | A UI component that renders readouts from one sensor, built on the generic `ui/Card` primitive. |
+
+Naming is deliberately different from the README's `CockpitItem` /
+`Integration` / `fetchItems`: same concepts, renamed to the cockpit theme
+(`Sensor` → `fetchReadouts()` → `Readout` → `Instrument`). Where the README
+says "integration", read "sensor".
+
+### Readout shape
 
 README defines the common shape as
 `id, source, segment, title, subtitle, timestamp, url, status`. Proposed:
@@ -91,7 +104,7 @@ type SourceId =
   | "investment"
   | "home-assistant";
 
-interface CockpitItem {
+interface Readout {
   id: string;            // stable, unique per source (used for dedup/keys)
   source: SourceId;
   segment: string;       // resolved segment id; "general" when unmatched
@@ -99,60 +112,62 @@ interface CockpitItem {
   subtitle?: string;
   timestamp: string;     // ISO 8601; drives "last updated" and sorting
   url: string;           // deep link back to the source app
-  status: "default" | "warning" | "urgent";
+  status: "advisory" | "caution" | "warning"; // aviation order: warning = most severe
   meta?: Record<string, unknown>; // per-source extras (price, entity state, ...)
 }
 ```
 
 Design decisions:
 
-- **`segment` is a resolved id, not a raw tag.** Integrations don't know the
-  segment tree. Each item carries its native tag in `meta` (e.g. the Gmail
+- **`segment` is a resolved id, not a raw tag.** Sensors don't know the
+  segment tree. Each readout carries its native tag in `meta` (e.g. the Gmail
   label or calendar name), and a single shared mapper in `src/lib/segments/`
   assigns `segment` post-fetch against `config/segments.yaml`. Untagged items
   land in `general` — nothing is silently dropped, per README.
-- **`status`** covers the two visible needs: `urgent` (overdue task, lock
-  unlocked) and `warning` (event soon, stale price). Cards render it as a
-  small badge; no decorative color coding beyond that.
-- **`meta`** keeps the common shape flat while letting cards pull
+- **`status`** follows aviation severity order — `advisory` (neutral default)
+  < `caution` < `warning`. An overdue task or unlocked lock is `warning`; an
+  event starting soon or a stale price is `caution`. Instruments render it as
+  a small badge; no decorative color coding beyond that.
+- **`meta`** keeps the common shape flat while letting instruments pull
   source-specific fields (e.g. `meta.changePercent` for a holding,
-  `meta.state` for an HA entity) without a discriminated union. Card
+  `meta.state` for an HA entity) without a discriminated union. Instrument
   components narrow `meta` with a per-source schema.
 
-### Integration interface
+### Sensor interface
 
-README requires `fetchItems(): Promise<CockpitItem[]>`. Proposed expansion:
+README requires `fetchReadouts(): Promise<Readout[]>` (written there as
+`fetchItems(): Promise<CockpitItem[]>`). Proposed expansion:
 
 ```ts
-interface Integration {
+interface Sensor {
   readonly id: SourceId;
   readonly name: string;
 
-  fetchItems(ctx: IntegrationContext): Promise<IntegrationResult>;
+  fetchReadouts(ctx: SensorContext): Promise<SensorResult>;
 }
 
-interface IntegrationContext {
+interface SensorContext {
   config: AppConfig;      // typed YAML config + env secrets
   cache: Cache;           // SQLite-backed cache
   now: Date;              // injected clock (mock-mode determinism, tests)
 }
 
-type IntegrationResult =
-  | { ok: true; items: CockpitItem[]; fetchedAt: string }
-  | { ok: false; error: IntegrationError; fetchedAt: string };
+type SensorResult =
+  | { ok: true; readouts: Readout[]; fetchedAt: string }
+  | { ok: false; error: SensorError; fetchedAt: string };
 ```
 
 Rationale:
 
 - **Errors are data, not throws.** README requires a failing source to show an
   error on its own card without breaking the page. Returning
-  `IntegrationResult` makes that the normal path; the overview renders the
-  error card when `ok: false`.
-- **`IntegrationContext`** keeps integrations pure and testable — the mock
-  context swaps in fixture-backed HTTP and a fixed clock.
-- The Investments segment is a composite: it pulls holdings/key dates from
-  Notion, then enriches with `MarketDataProvider` quotes before emitting
-  items. The provider is injected via `ctx`, so it stays swappable.
+  `SensorResult` makes that the normal path; the overview renders an
+  error instrument when `ok: false`.
+- **`SensorContext`** keeps sensors pure and testable — the mock
+  context swaps in fixture-backed transport and a fixed clock.
+- The Investments segment is a composite sensor: it pulls holdings/key dates
+  from Notion, then enriches with `MarketDataProvider` quotes before emitting
+  readouts. The provider is injected via `ctx`, so it stays swappable.
 
 ## 3. Mock mode (`DATA_MODE=mock`)
 
@@ -162,12 +177,12 @@ against mocks.
 
 Design:
 
-- **`DATA_MODE=live | mock`** in `.env`. `mock` swaps every integration's
-  transport for fixture reads. Optional `MOCK_INTEGRATIONS=gmail,calendar`
+- **`DATA_MODE=live | mock`** in `.env`. `mock` swaps every sensor's
+  transport for fixture reads. Optional `MOCK_SENSORS=gmail,calendar`
   allows partial mocking when developing against a subset of live accounts.
-- **Fixtures mimic raw upstream responses, not `CockpitItem`s.** Each
-  integration is split into *transport* (call the API / read the fixture) and
-  *normalize* (raw JSON → `CockpitItem`). Mock mode changes only transport,
+- **Fixtures mimic raw upstream responses, not `Readout`s.** Each
+  sensor is split into *transport* (call the API / read the fixture) and
+  *normalize* (raw JSON → `Readout`). Mock mode changes only transport,
   so mapping and segment logic — the parts that must not be wrong — run
   identically in mock and live, and are what the unit tests cover.
 - **Fixture loader** (`src/lib/mocks/`): reads `fixtures/<source>.json`,
@@ -224,8 +239,8 @@ config-only.
 
 Mitigations for Yahoo being unofficial: small retry/backoff on 429s, always
 serve the last cached quote when a refresh fails (show `fetchedAt` on the
-card), and keep the provider behind the interface below so it can be replaced
-by a paid keyed API later without touching the Investments integration.
+instrument), and keep the provider behind the interface below so it can be
+replaced by a paid keyed API later without touching the Investments sensor.
 
 ### Provider interface
 
@@ -266,11 +281,10 @@ Each provider owns a `SymbolRef → provider symbol` mapper (`7203`+TSE →
   refreshes when the relevant exchange is closed (future optimization, not
   required for v1).
 
-## 5. Open questions
+## 5. Resolved questions
 
-1. Confirm Yahoo Finance as primary vs paying ~$29/mo for Twelve Data Grow —
-   the recommendation assumes free-tier-only.
-2. `Work` segment stays a hidden placeholder in v1 — assumed folded into the
-   layout rather than config.
-3. E2E runner: Playwright is the obvious default for the responsive
-   breakpoints; flagging only so it's confirmed before the skeleton step.
+1. **Market data:** confirmed — Yahoo Finance primary (TSE via `7203.T`,
+   US tickers, `USDJPY=X` for JPY totals), Stooq fallback, no paid provider.
+2. **Work segment:** stays a hidden placeholder in v1, folded into the
+   layout rather than config — confirmed.
+3. **E2E runner:** Playwright for the responsive breakpoints — confirmed.
