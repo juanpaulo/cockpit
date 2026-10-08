@@ -67,6 +67,22 @@ file is the binding convention layer on top of them.
 
 - One task per PR, kept small. Short description of what changed and how it
   was tested.
+
+## Cursor Cloud specific instructions
+
+- Mock mode is the default (`DATA_MODE` unset or `mock`). No `.env` and no
+  real `config/*.yaml` are required; missing config falls back to
+  `config/*.example.yaml`, and sensors read `fixtures/`.
+- `npm run typecheck` depends on generated route types (`LayoutProps` and
+  `next-env.d.ts`, which is gitignored). Run `npx next typegen` after
+  `npm ci`. `next dev` and `next build` generate the same files.
+- Dev server: `npm run dev -- --hostname 0.0.0.0 --port 3000`.
+  `GET /api/health` returns `{ ok: true, mode: "mock" }`.
+- `npm run test:e2e` starts its own Next server on port 3100. Install the
+  browser with `npx playwright install chromium`. Leave the port 3000 server
+  running; the e2e suite does not reuse it.
+- Docker Compose is the home-server deploy path. Day-to-day development runs
+  Next on the host.
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
